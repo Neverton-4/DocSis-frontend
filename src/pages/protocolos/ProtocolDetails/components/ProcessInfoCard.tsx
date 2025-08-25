@@ -1,0 +1,43 @@
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card-component';
+import { Processo } from '@/services/processoService';
+import ServerInfo from './ServerInfo';
+import ProcessInfo from './ProcessInfo';
+
+interface ProcessInfoCardProps {
+  processo: Processo;
+  onVoltar: () => void;
+  onEncaminhar: () => void;
+  onComprovante: () => void;
+}
+
+const ProcessInfoCard: React.FC<ProcessInfoCardProps> = ({ 
+  processo, 
+  onVoltar, 
+  onEncaminhar,
+  onComprovante
+}) => {
+  return (
+    <Card className="col-span-8 p-6 bg-white">
+      <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+        <ServerInfo processo={processo} />
+        <ProcessInfo processo={processo} />
+      </div>
+
+      <div className="flex justify-end gap-4 mt-8">
+        <Button variant="outline" onClick={onVoltar}>
+          Voltar
+        </Button>
+        <Button variant="outline" onClick={onComprovante}>
+          Comprovante
+        </Button>
+        <Button onClick={onEncaminhar}>
+          Encaminhar
+        </Button>
+      </div>
+    </Card>
+  );
+};
+
+export default ProcessInfoCard;
