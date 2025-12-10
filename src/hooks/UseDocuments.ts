@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getDocumentosByProcessoId,
+  listarDocumentos,
   uploadDocumento,
-  deleteDocumento,
-  downloadDocumento,
-  Documento,
-  DocumentoUpload
-} from '@/services/documentoService';
+  deletarDocumento,
+  ProcessoDocumento
+} from '@/services/processoDocumentoService';
+import {
+  listarAnexos,
+  uploadAnexo,
+  deletarAnexo,
+  downloadAnexo,
+  ProcessoAnexo
+} from '@/services/processoAnexoService';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useDocuments = (processoId: number) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -16,20 +22,42 @@ export const useDocuments = (processoId: number) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const { user } = useAuth();
+
   // Query para buscar documentos
   const {
     data: documentos,
-    isLoading,
-    error,
-    refetch
+    isLoading: isLoadingDocumentos,
+    error: errorDocumentos,
+    refetch: refetchDocumentos
   } = useQuery({
-    queryKey: ['documentos', processoId],
-    queryFn: () => getDocumentosByProcessoId(processoId),
+    queryKey: ['processo-documentos', processoId],
+    queryFn: () => listarDocumentos(processoId),
     enabled: !!processoId,
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
-  // Mutation para upload
+  // Query para buscar anexos
+  const {
+    data: anexos,
+    isLoading: isLoadingAnexos,
+    error: errorAnexos,
+    refetch: refetchAnexos
+  } = useQuery({
+    queryKey: ['processo-anexos', processoId],
+    queryFn: () => listarAnexos(processoId),
+    enabled: !!processoId,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+
+  const isLoading = isLoadingDocumentos || isLoadingAnexos;
+  const error = errorDocumentos || errorAnexos;
+  const refetch = () => {
+    refetchDocumentos();
+    refetchAnexos();
+  };
+
+  // Mutation para upload de documentos
   const uploadMutation = useMutation({
     mutationFn: uploadDocumento,
     onMutate: () => {
@@ -57,9 +85,9 @@ export const useDocuments = (processoId: number) => {
     }
   });
 
-  // Mutation para deletar
+  // Mutation para deletar documento
   const deleteMutation = useMutation({
-    mutationFn: deleteDocumento,
+    mutationFn: deletarDocumento,
     onMutate: async (documentoId: number) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['documentos', processoId] });
@@ -133,3 +161,24 @@ export const useDocuments = (processoId: number) => {
       
 //       toast({
 //         title: "Download",
+//         description: "Documento baixado com sucesso",
+//         variant: "default",
+//       });
+//     } catch (error) {
+//       console.error('Erro ao baixar documento:', error);
+//       toast({
+//         title: "Erro",
+//         description: "Erro ao baixar documento",
+//         variant: "destructive",
+//       });
+//     }
+//   };
+
+  return {
+    isUploading,
+    selectedFiles,
+    setSelectedFiles,
+    uploadDocuments,
+    // downloadDocument
+  };
+};

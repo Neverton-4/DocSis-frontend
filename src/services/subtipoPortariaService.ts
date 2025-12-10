@@ -19,10 +19,13 @@ export const subtipoPortariaService = {
 
   async getByTipoPortariaId(tipoPortariaId: number): Promise<SubtipoPortaria[]> {
     try {
-      const response = await api.get(`/subtipos-portaria/por-tipo/${tipoPortariaId}`);
+      console.log('🌐 Fazendo requisição para:', `/portarias/tipos/${tipoPortariaId}/subtipos`);
+      // Usar a nova rota específica /portarias/tipos/{id}/subtipos
+      const response = await api.get(`/portarias/tipos/${tipoPortariaId}/subtipos`);
+      console.log('📡 Resposta da API:', response.data);
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
-      console.error('Erro ao buscar subtipos por tipo:', error);
+      console.error('❌ Erro ao buscar subtipos por tipo:', error);
       // Retornar array vazio em caso de erro (pode ser que não existam subtipos)
       return [];
     }

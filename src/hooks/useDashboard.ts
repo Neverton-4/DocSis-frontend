@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Processo } from '@/components/CustomerTable';
+import api from '@/config/api';
 
 const useDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,6 +14,8 @@ const useDashboard = () => {
   const [loading, setLoading] = useState(true);
   // Novo estado para o dialog de seleção de tipo de protocolo
   const [protocolTypeDialogOpen, setProtocolTypeDialogOpen] = useState(false);
+  // Novo estado para o dialog de cadastro
+  const [registrationDialogOpen, setRegistrationDialogOpen] = useState(false);
   
   const { toast } = useToast();
   const ITEMS_PER_PAGE = 10;
@@ -21,14 +24,14 @@ const useDashboard = () => {
     const fetchProcessos = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8000/api/processos');
-        if (!response.ok) {
+        const response = await api.get('/processos');
+        if (!response.data) {
           throw new Error('Erro ao carregar processos');
         }
-        const data = await response.json();
-        // Ordenar do mais recente para o mais antigo
+        const data = response.data;
+        // Ordenar por ID em ordem decrescente (mais recente primeiro)
         const sortedProcessos = (data.value || data).sort((a: Processo, b: Processo) => {
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return b.id - a.id;
         });
         setProcessos(sortedProcessos);
       } catch (error) {
@@ -112,7 +115,9 @@ const useDashboard = () => {
     totalPages,
     // Novos retornos
     protocolTypeDialogOpen,
-    setProtocolTypeDialogOpen
+    setProtocolTypeDialogOpen,
+    registrationDialogOpen,
+    setRegistrationDialogOpen
   };
 };
 

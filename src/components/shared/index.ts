@@ -1,0 +1,25 @@
+// Componentes compartilhados entre diferentes páginas e módulos
+export { BackButton } from './BackButton';
+export { DocumentHeader } from './DocumentHeader';
+export { PDFViewer } from './PDFViewer';
+export { DocumentThumbnails } from './DocumentThumbnails';
+export { DocumentSignatureModal } from './DocumentSignatureModal';
+export { DocumentActions } from './DocumentActions';
+export { YearSelector } from './YearSelector';
+export { SearchAndFilter } from './SearchAndFilter';
+export { DocumentGrid } from './DocumentGrid';
+export { DocumentList } from './DocumentList';
+export { DocumentUploadDialog } from './DocumentUploadDialog';
+export { AnexosCard } from './AnexosCard';
+export { DocumentUpload } from './DocumentUpload';
+export { default as DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+export { default as StatusCard } from './StatusCard';
+export { CertificateSelector } from './CertificateSelector';
+export { default as ComprovanteDialog } from './ComprovanteDialog';
+export { NumeracaoDialog } from './NumeracaoDialog';
+export { default as CustomerTable } from './CustomerTable';
+export { default as ServidorTable } from './ServidorTable';
+export { default as ServidorDialog } from './ServidorDialog';
+export { default as DepartamentoDialog } from './DepartamentoDialog';
+export * from './Navigation';
+export { default as ProfileDialog } from './ProfileDialog';

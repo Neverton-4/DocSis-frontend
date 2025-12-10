@@ -1,0 +1,47 @@
+import { useState } from 'react';
+import { Customer, TipoProcesso, TipoServidor } from '../types';
+
+export const useProcessoForm = () => {
+  const [formData, setFormData] = useState<Customer>({
+    // ... estado inicial do formData ...
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    if (name.startsWith('endereco.')) {
+      const enderecoField = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        endereco: {
+          ...prev.endereco,
+          [enderecoField]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleTipoProcessoChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      tipoProcesso: value as TipoProcesso
+    }));
+  };
+
+  // Manter compatibilidade com código existente (deprecated)
+  /** @deprecated Use useProcessoForm instead */
+  const useProtocoloForm = useProcessoForm;
+
+  return {
+    formData,
+    setFormData,
+    handleChange,
+    handleSelectChange,
+    handleTipoProcessoChange
+  };
+};

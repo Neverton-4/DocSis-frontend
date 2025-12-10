@@ -1,0 +1,34 @@
+{/* Upload de Arquivo */}
+          <div className="space-y-2">
+            <Label htmlFor="arquivo">Anexo do Documento (.docx) *</Label>
+            <Input
+              id="arquivo"
+              type="file"
+              accept=".docx"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  if (file.type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                    alert('Apenas arquivos .docx são permitidos');
+                    e.target.value = '';
+                    setDocumentFile(null);
+                  } else if (file.size > 10 * 1024 * 1024) {
+                    alert('Arquivo muito grande (máximo 10MB)');
+                    e.target.value = '';
+                    setDocumentFile(null);
+                  } else {
+                    setDocumentFile(file);
+                  }
+                } else {
+                  setDocumentFile(null);
+                }
+              }}
+              className={errors.documentFile ? 'border-red-500' : ''}
+            />
+            <p className="text-sm text-gray-500">
+              Selecione o arquivo da portaria em formato .docx (máximo 10MB)
+            </p>
+            {errors.documentFile && (
+              <p className="text-sm text-red-600">{errors.documentFile}</p>
+            )}
+          </div>

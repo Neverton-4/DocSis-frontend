@@ -16,5 +16,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['@radix-ui/react-checkbox', 'clsx', 'tailwind-merge']
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/setupTests.ts'],
+    globals: true,
   }
 })

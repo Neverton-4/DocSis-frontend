@@ -21,4 +21,24 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Interceptor de resposta para tratar erros de autenticação
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        // Se for erro 401 (não autorizado) ou 422 (dados inválidos relacionados à autenticação)
+        if (error.response?.status === 401 || 
+            (error.response?.status === 422 && error.config?.url?.includes('/tipos'))) {
+            // Limpar token inválido
+            localStorage.removeItem('token');
+            
+            // Redirecionar para login apenas se não estivermos já na página de login
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/login';
+            }
+        }
+        
+        return Promise.reject(error);
+    }
+);
+
 export default api;

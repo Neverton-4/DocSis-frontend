@@ -22,8 +22,15 @@ export const tipoPortariaService = {
   },
 
   async getAtivos(): Promise<TipoPortaria[]> {
-    const response = await api.get('/tipos-portaria?ativo=true');
-    return response.data;
+    try {
+      // Usar o endpoint do padrão /portarias/tipos que já retorna apenas ativos
+      const response = await api.get('/portarias/tipos');
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error('Erro ao buscar tipos ativos:', error);
+      // Retornar array vazio em caso de erro para evitar loops
+      return [];
+    }
   },
 
   async create(tipoPortaria: Omit<TipoPortaria, 'id'>): Promise<TipoPortaria> {

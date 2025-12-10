@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios, { AxiosError } from 'axios';
 import api from '@/config/api';
+import { PermissionService } from '@/lib/PermissionService';
 import { PermissaoUsuario, Departamento, Secretaria } from '@/types';
 
 interface User {
@@ -11,6 +12,7 @@ interface User {
   nome: string;
   cargo: string;
   pode_assinar: boolean;
+  servidor_id: number;  // Adicionando servidor_id
   department?: string;
   departamento_id: number;
   departamento?: {
@@ -23,11 +25,14 @@ interface User {
     abrev:string;
   };
   permissoes?: PermissaoUsuario[];
-  assinantes?: Array<{
+  usuario_assinantes?: Array<{
     id: number;
-    tela_id: number;
-    tipo: string;
-    nome: string;
+    assinante_id: number;
+    assinante_nome: string;
+    assinante_tipo: string;
+    assinante_cargo_id?: number | null;
+    assinante_cargo_nome?: string | null;
+    documentos: string[];
   }>;
 }
 
@@ -65,8 +70,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkAuth = async () => {
     try {
       const response = await api.get('/auth/me');
-      setUser(response.data);
-      console.log(response.data);
+      const data = response.data;
+      // Normalizar o payload para garantir departamento_id no topo
+      const normalized = {
+        ...data,
+        departamento_id: data?.departamento?.id ?? data?.departamento_id,
+      };
+      setUser(normalized);
+      PermissionService.setPermissions(normalized?.permissoes || []);
+      try {
+        const telasResp = await api.get('/telas');
+        const map: Record<string, number> = {}
+        for (const t of telasResp.data || []) {
+          if (t && t.codigo && typeof t.id === 'number') {
+            map[t.codigo] = t.id
+          }
+        }
+        PermissionService.setScreenMap(map)
+      } catch (e) {
+        console.warn('Falha ao carregar telas', e)
+      }
     } catch (error) {
       localStorage.removeItem('token');
       setUser(null);
@@ -77,35 +100,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Função para verificar se o usuário tem uma permissão específica
   const temPermissao = (permissao: string, telaId?: number): boolean => {
-    if (!user || !user.permissoes) return false;
-    
-    return user.permissoes.some(p => {
-      const temPermissaoCorreta = p.permissao === permissao && (p.ativo !== false);
-      
-      // Se telaId foi fornecido, valida também a tela
-      if (telaId !== undefined) {
-        return temPermissaoCorreta && p.tela === telaId;
-      }
-      
-      return temPermissaoCorreta;
-    });
+    return PermissionService.has(permissao, telaId);
   };
   
   // Função para obter o nome da permissão
   const getNomePermissao = (permissao: string, telaId?: number): string => {
-    if (!user || !user.permissoes) return permissao;
-    
-    const permissaoEncontrada = user.permissoes.find(p => {
-      const temPermissaoCorreta = p.permissao === permissao && (p.ativo !== false);
-      
-      if (telaId !== undefined) {
-        return temPermissaoCorreta && p.tela === telaId;
-      }
-      
-      return temPermissaoCorreta;
-    });
-    
-    return permissaoEncontrada?.nome || permissao;
+    return PermissionService.getName(permissao, telaId) || permissao;
   };
   
   // Função para verificar se o usuário pode assinar documentos
@@ -129,6 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
       // Agora busca os dados completos do usuário
       await checkAuth();
+      PermissionService.load();
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
@@ -155,23 +156,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    PermissionService.setPermissions([]);
   };
 
   // Verificar se pode assinar como determinado tipo
   const podeAssinarComo = (tipo: 'prefeito' | 'secretario' | 'procurador'): boolean => {
-    if (!user?.assinantes) return false;
-    return user.assinantes.some(assinante => assinante.tipo === tipo);
+    if (!user?.usuario_assinantes) return false;
+    return user.usuario_assinantes.some(a => String(a.assinante_tipo).toLowerCase() === tipo);
   };
   
   // Nova função para filtrar assinantes por tela
   const getAssinantesPorTela = (telaId: number) => {
-    if (!user?.assinantes) return [];
-    return user.assinantes.filter(assinante => assinante.tela_id === telaId);
+    if (!user?.usuario_assinantes) return [];
+    return user.usuario_assinantes.map(a => ({ id: a.id, tela_id: telaId, tipo: String(a.assinante_tipo), nome: a.assinante_nome }));
   };
   
   // Atualizar a função getAssinantesDoUsuario para incluir tela_id
   const getAssinantesDoUsuario = () => {
-    return user?.assinantes;
+    if (!user?.usuario_assinantes) return undefined;
+    return user.usuario_assinantes.map(a => ({ id: a.id, tela_id: 0, tipo: String(a.assinante_tipo), nome: a.assinante_nome }));
   };
 
   return (

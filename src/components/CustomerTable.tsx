@@ -1,28 +1,16 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit, ExternalLink, Trash } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Processo {
   id: number;
+  numero: string;
+  ano: number;
   descricao: string;
   tipo_processo: string;
   status: string;
   created_at: string;
+  nome_interessado?: string;
+  status_dpto?: string;
   servidor: {
     id: number;
     nome_completo: string;
@@ -32,21 +20,22 @@ export interface Processo {
 }
 
 interface CustomerTableProps {
-  processos: Processo[];
+  processos?: Processo[];
   currentPage: number;
   setCurrentPage: (page: number) => void;
   totalPages: number;
+  redirectPath?: string; // Nova prop para customizar o caminho de redirecionamento
 }
 
 export const CustomerTable: React.FC<CustomerTableProps> = ({
-  processos,
+  processos = [],
   currentPage,
   setCurrentPage,
-  totalPages
+  totalPages,
+  redirectPath = '/processo' // Valor padrão para manter compatibilidade
 }) => {
   const navigate = useNavigate();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [processoToDelete, setProcessoToDelete] = useState<Processo | null>(null);
+  const { user } = useAuth();
 
   const formatTipoProcesso = (tipo: string) => {
     switch (tipo) {
@@ -94,23 +83,10 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
   };
 
   const handleRowClick = (processo: Processo) => {
-    navigate(`/protocolo/${processo.id}`);
+    navigate(`${redirectPath}/${processo.id}`);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent, processo: Processo) => {
-    e.stopPropagation();
-    setProcessoToDelete(processo);
-    setDeleteDialogOpen(true);
-  };
 
-  const handleConfirmDelete = () => {
-    if (processoToDelete) {
-      console.log('Deletando processo:', processoToDelete.id);
-      // Implementar a lógica de deleção aqui
-    }
-    setDeleteDialogOpen(false);
-    setProcessoToDelete(null);
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
@@ -118,91 +94,44 @@ export const CustomerTable: React.FC<CustomerTableProps> = ({
         <table className="w-full">
           <thead>
             <tr className="bg-sidebar border-b">
-              <th className="px-4 py-3 text-center text-sm font-medium text-white">#</th>
-              <th className="px-4 py-3 text-center text-sm font-medium text-white">Nome do Servidor</th>
+              <th className="px-4 py-3 text-center text-sm font-medium text-white">Protocolo</th>
+              <th className="px-4 py-3 text-center text-sm font-medium text-white">Nome do Interessado</th>
               <th className="px-4 py-3 text-center text-sm font-medium text-white">Tipo de Processo</th>
               <th className="px-4 py-3 text-center text-sm font-medium text-white">Data de Criação</th>
-              <th className="px-4 py-3 text-center text-sm font-medium text-white">Status</th>
-              <th className="px-4 py-3 text-center text-sm font-medium text-white">Ações</th>
+              <th className="px-4 py-3 text-center text-sm font-medium text-white">Status da Etapa</th>
+              <th className="px-4 py-3 text-center text-sm font-medium text-white">Status do Processo</th>
             </tr>
           </thead>
           <tbody>
-            {processos.map((processo) => (
+            {processos && processos.length > 0 ? processos.map((processo) => (
               <tr 
                 key={processo.id} 
                 className="border-b hover:bg-gray-50 cursor-pointer"
                 onClick={() => handleRowClick(processo)}
               >
-                <td className="px-4 py-3 text-sm text-center text-gray-500">{processo.id}</td>
-                <td className="px-4 py-3 text-sm text-center">{processo.servidor?.nome_completo || 'N/A'}</td>
+                <td className="px-4 py-3 text-sm text-center text-gray-500">{processo.numero}/{processo.ano}</td>
+                <td className="px-4 py-3 text-sm text-center">{processo.nome_interessado || processo.servidor?.nome_completo || 'N/A'}</td>
                 <td className="px-4 py-3 text-sm text-center">{formatTipoProcesso(processo.tipo_processo)}</td>
                 <td className="px-4 py-3 text-sm text-center">{new Date(processo.created_at).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-sm text-center">{processo.status_dpto || '—'}</td>
                 <td className="px-4 py-3 text-sm">
                   <div className="flex items-center justify-center">
                     <span className={`h-2.5 w-2.5 rounded-full ${getStatusColor(processo.status)} mr-2`}></span>
                     {formatStatus(processo.status)}
                   </div>
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-center gap-2">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button 
-                          className="p-1 rounded hover:bg-gray-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRowClick(processo);
-                          }}
-                        >
-                          <ExternalLink className="h-4 w-4 text-gray-500" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Detalhes</p>
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button 
-                          className="p-1 rounded hover:bg-gray-100"
-                          onClick={(e) => handleDeleteClick(e, processo)}
-                        >
-                          <Trash className="h-4 w-4 text-red-500" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Excluir</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
+              </tr>
+            )) : (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  Nenhum processo encontrado
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
       
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o processo {processoToDelete?.id} - {processoToDelete?.servidor?.nome_completo || 'N/A'}?
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmDelete}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       
       <div className="px-4 py-3 bg-gray-50 border-t flex items-center justify-between">
         <div>

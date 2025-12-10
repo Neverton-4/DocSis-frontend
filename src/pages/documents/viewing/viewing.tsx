@@ -1,0 +1,166 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import Header from '@/components/layout/Header';
+import {
+  DocumentHeader,
+  PDFViewer,
+  BackButton,
+  DocumentSignatureModal,
+  CertificateSelector
+} from '@components/shared';
+import { DocumentTabs } from '@/pages/signatures/SignatureViewer/components';
+import { useDocumentViewer, useDocumentSignature } from './hooks';
+import { useTabPersistence } from '@/pages/signatures/SignatureViewer/hooks/useTabPersistence';
+import { downloadDocumento } from '@/services/documentoService';
+import { documentoService as portariaService } from '@/services/documentoPortariaService';
+import { Button } from '@/components/ui/button';
+import { ArrowDownToLine, FileText } from 'lucide-react';
+import { toast } from 'sonner';
+
+export const DocumentViewerPage = () => {
+  const { id, tipo } = useParams<{ id: string; tipo?: string }>();
+  const navigate = useNavigate();
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const {
+    portariaData,
+    loading,
+    error,
+    pdfUrl,
+    anexosData,
+    documentType,
+    handleAnexoClick,
+    handleDocumentoPrincipalClick,
+    handleBack
+  } = useDocumentViewer();
+
+  const {
+    assinaturaData,
+    pdfBlob,
+    showSignatureModal,
+    showCertificateSelector,
+    selectedCertificate,
+    isProcessingSignature,
+    handleCertificateSelected,
+    processDigitalSignature,
+    closeSignatureModal
+  } = useDocumentSignature(portariaData);
+
+  // Hook para persistência de abas
+  const { activeTab, handleTabChange } = useTabPersistence('documento');
+
+  const handleDownloadPDF = useCallback(async () => {
+    if (!id) return;
+    
+    setIsDownloading(true);
+    try {
+      let blob: Blob;
+      
+      if (tipo === 'portaria' && portariaData?.documento_principal?.id) {
+        // Baixar documento principal da portaria
+        blob = await portariaService.getDocumentoDocumento(Number(id), true, false, false);
+      } else {
+        // Baixar documento normal
+        blob = await downloadDocumento(parseInt(id));
+      }
+      
+      // Criar URL e acionar download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `documento-${id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Documento baixado com sucesso!');
+    } catch (err) {
+      console.error('Erro ao baixar documento:', err);
+      toast.error('Erro ao baixar documento');
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [id, tipo, portariaData]);
+
+  // Limpar URL do objeto quando o componente desmontar
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Header 
+        userName="Usuário" 
+        userRole="Administrador" 
+        breadcrumb="Documentos / Visualizar Documento" 
+      />
+      
+      {/* Botão Voltar */}
+      <BackButton onBack={handleBack} />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          
+          {/* Área principal */}
+          <div className="lg:col-span-3 space-y-4 order-2 lg:order-1">
+            
+          {/* Informações da Portaria */}
+          {portariaData && (
+            <DocumentHeader
+              numero={portariaData.portaria.numero}
+              ano={portariaData.portaria.ano.toString()}
+              titulo={portariaData.portaria.titulo || `${portariaData.tipo?.nome || 'Tipo não informado'}${portariaData.subtipo?.nome_subtipo ? ` - ${portariaData.subtipo.nome_subtipo}` : ''}`}
+              servidor={portariaData.servidor?.nome || 'Servidor não informado'}
+              tipoNome={portariaData.tipo?.nome || 'Tipo não informado'}
+              subtipoNome={portariaData.subtipo?.nome_subtipo}
+              documentType={documentType || 'portaria'}
+            />
+          )}
+
+            {/* PDF Viewer */}
+            <PDFViewer
+              pdfUrl={pdfUrl}
+              loading={loading}
+              error={error}
+            />
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1 order-1 lg:order-2">
+            {/* Thumbnails */}
+            <DocumentTabs
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              documentoPrincipal={!!portariaData?.documento_principal}
+              documentoThumbnailBase64={portariaData?.documento_principal?.thumbnail}
+              anexosData={anexosData}
+              onDocumentoPrincipalClick={handleDocumentoPrincipalClick}
+              onAnexoClick={handleAnexoClick}
+            />
+          </div>
+        </div>
+      </div>
+      
+      {/* Modal de Assinatura */}
+      <DocumentSignatureModal
+        showCertificateSelector={showCertificateSelector}
+        onCancelCertificateSelector={closeSignatureModal}
+        onCertificateSelected={handleCertificateSelected}
+        showSignatureModal={showSignatureModal}
+        assinaturaData={assinaturaData}
+        pdfBlob={pdfBlob}
+        selectedCertificate={selectedCertificate}
+        isProcessingSignature={isProcessingSignature}
+        onProcessDigitalSignature={processDigitalSignature}
+        onCloseSignatureModal={closeSignatureModal}
+      />
+    </div>
+  );
+};
+
+export default DocumentViewerPage;

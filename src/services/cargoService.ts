@@ -1,15 +1,14 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:8000/api';
+import api from '../config/api';
 
 export interface Cargo {
   id: number;
   nome: string;
   nome_completo: string;
   cod?: string;
-  tipo: 'agente_politico' | 'comissionado' | 'funcao' | 'magisterio' | 'padrao';
+  tipo: 'agente_politico' | 'comissionado' | 'funcao' | 'magisterio' | 'padrao' | 'funcao_gratificada';
   secretaria_id?: number;
   ativo: boolean;
+  exige_escola: boolean;
   created_at: string;
   updated_at: string;
   secretaria?: {
@@ -38,20 +37,20 @@ export const cargoService = {
     if (params?.tipo) queryParams.append('tipo', params.tipo);
     if (params?.secretaria_id) queryParams.append('secretaria_id', params.secretaria_id.toString());
     
-    const url = `${API_URL}/cargos${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-    const response = await axios.get(url);
+    const url = `/cargos${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await api.get(url);
     return response.data;
   },
 
   // Buscar cargos por secretaria (usando a rota específica)
   async getBySecretaria(secretariaId: number): Promise<Cargo[]> {
-    const response = await axios.get(`${API_URL}/cargos/secretaria/${secretariaId}`);
+    const response = await api.get(`/cargos/secretaria/${secretariaId}`);
     return response.data;
   },
 
   // Buscar cargos por tipo (usando a rota específica)
   async getByTipo(tipo: string): Promise<Cargo[]> {
-    const response = await axios.get(`${API_URL}/cargos/tipo/${tipo}`);
+    const response = await api.get(`/cargos/tipo/${tipo}`);
     return response.data;
   },
 

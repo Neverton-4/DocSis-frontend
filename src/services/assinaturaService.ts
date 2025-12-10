@@ -1,3 +1,5 @@
+import api from '@/config/api';
+
 export interface AssinaturaPortaria {
   id: number;
   portaria_id: number;
@@ -14,20 +16,15 @@ export interface AssinaturaPortaria {
 }
 
 class AssinaturaService {
-  private baseURL = 'http://localhost:8000/api';
+  // Usar axios `api` configurado para garantir baseURL e autenticação consistentes
+  private baseURL = '/portarias';
 
   // Buscar todas as assinaturas de uma portaria
   async getByPortariaId(portariaId: number): Promise<AssinaturaPortaria[]> {
     try {
-      const response = await fetch(`${this.baseURL}/assinaturas-portaria/${portariaId}`);
-      if (!response.ok) {
-        throw new Error('Erro ao buscar assinaturas da portaria');
-      }
-      const data = await response.json();
-      
+      const response = await api.get(`${this.baseURL}/assinaturas/${portariaId}`);
+      const data = response.data;
       // Garantir que sempre retornamos um array
-      // Se a API retorna um objeto único, colocamos em um array
-      // Se já é um array, mantemos como está
       return Array.isArray(data) ? data : [data];
     } catch (error) {
       console.error('Erro ao buscar assinaturas:', error);
@@ -38,11 +35,8 @@ class AssinaturaService {
   // Buscar assinaturas por status
   async getByStatus(status: 'pendente' | 'assinada'): Promise<AssinaturaPortaria[]> {
     try {
-      const response = await fetch(`${this.baseURL}/assinaturas/status/${status}`);
-      if (!response.ok) {
-        throw new Error('Erro ao buscar assinaturas por status');
-      }
-      return await response.json();
+      const response = await api.get(`${this.baseURL}/assinaturas/status/${status}`);
+      return response.data;
     } catch (error) {
       console.error('Erro ao buscar assinaturas por status:', error);
       throw error;
@@ -52,11 +46,8 @@ class AssinaturaService {
   // Buscar todas as assinaturas
   async getAll(): Promise<AssinaturaPortaria[]> {
     try {
-      const response = await fetch(`${this.baseURL}/assinaturas`);
-      if (!response.ok) {
-        throw new Error('Erro ao buscar todas as assinaturas');
-      }
-      return await response.json();
+      const response = await api.get(`${this.baseURL}/assinaturas`);
+      return response.data;
     } catch (error) {
       console.error('Erro ao buscar assinaturas:', error);
       throw error;
@@ -66,21 +57,20 @@ class AssinaturaService {
   // Atualizar status de uma assinatura
   async updateStatus(id: number, status: 'pendente' | 'assinada'): Promise<AssinaturaPortaria> {
     try {
-      const response = await fetch(`${this.baseURL}/assinaturas/${id}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status, data_assinatura: new Date().toISOString() }),
+      const response = await api.put(`${this.baseURL}/assinaturas/${id}/status`, {
+        status,
+        data_assinatura: new Date().toISOString(),
       });
-      if (!response.ok) {
-        throw new Error('Erro ao atualizar status da assinatura');
-      }
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       throw error;
     }
+  }
+
+  // Buscar todas as assinaturas de uma portaria (alias para compatibilidade)
+  async fetchByPortaria(portariaId: number): Promise<AssinaturaPortaria[]> {
+    return this.getByPortariaId(portariaId);
   }
 
   // Verificar se todas as assinaturas de uma portaria estão completas

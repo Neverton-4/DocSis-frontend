@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import Dashboard from '@/pages/protocolos/Dashboard/Dashboard';
+import Dashboard from '@/pages/protocol/ProtocolDashboard/ProtocolDashboard';
 
 const Index = () => {
   const location = useLocation();

@@ -1,6 +1,8 @@
+import { TipoServidorSimples } from './tipoServidor';
+
 export type Status = 'pendente' | 'em_andamento' | 'concluido' | 'cancelado';
 
-export type TipoServidor = 'efetivo' | 'temporario' | 'comissionado' | 'nao_servidor';
+export type TipoServidorLegacy = 'efetivo' | 'temporario' | 'comissionado' | 'nao_servidor';
 
 export type TipoCategoria = 'licenca' | 'declaracao' | 'gratificacao' | 'outro';
 
@@ -8,20 +10,29 @@ export interface Customer {
   id: string;
   fullName: string;
   cpf: string;
+  rg: string;
+  rg_uf?: string;
+  orgao_exp?: string;
   logradouro: string;
   bairro: string;
   numero: string;
+  complemento: string;
   cidade: string;
   uf: string;
-  tipoServidor: TipoServidor;
+  cep: string;
+  tipoServidor: TipoServidorLegacy;
   lotacao: string;
+  secretaria_id: number;
   cargo: string;
+  cargo_id?: number | null; // ✅ NOVO: ID do cargo para o select
   sexo: 'M' | 'F' | 'O';
   secretaria: string;
   contato: string;
-  is_whatsapp: boolean; // ✅ Corrigido: era isWhatsapp
+  is_whatsapp: boolean;
   email: string;
-  data_nascimento: string; // ✅ Corrigido: era dateOfBirth
+  data_nascimento: string;
+  matricula: string;
+  data_admissao: string;
   tipoProcesso: string;
   tipoProcessoOutro?: string;
   status: 'pendente' | 'em_andamento' | 'concluido' | 'cancelado';
@@ -29,6 +40,14 @@ export interface Customer {
   updatedAt: string;
   camposExtras: any;
   tipoProcesso_escolhido: string;
+  // Campos de expediente
+  expediente_tipo?: 'portaria' | 'decreto';
+  expediente_numero?: string;
+  expediente_data?: string;
+  // Campos de amparo
+  amparo_tipo?: 'lei_municipal' | 'lei_estadual' | 'lei_federal' | 'decreto';
+  amparo_numero?: string;
+  amparo_data?: string;
 }
 
 export interface StatusSummary {
@@ -99,6 +118,7 @@ export interface TipoProcesso {
     descricao: string;
     tipo: 'licenca' | 'gratificacao' | 'declaracao' | 'outro';
     campos_extras: any;
+    cidadao?: boolean;
     created_at: string;
 }
 
@@ -137,34 +157,111 @@ export interface Secretaria {
     updated_at?: string;
 }
 
-export interface Servidor {
+// Interface para Cargo aninhado no servidor
+export interface CargoServidor {
     id: number;
-    matricula: string | null;
+    secretaria_id: number;
+    nome: string;
     nome_completo: string;
-    cpf: string;
-    data_nascimento: string | null;
-    sexo: 'M' | 'F' | 'O';
-    cep: string | null;
-    logradouro: string | null;
-    numero: string | null;
-    complemento: string | null;
-    bairro: string | null;
-    cidade: string | null;
-    uf: string | null;
-    contato: string | null;
-    email: string | null;
-    tipo_servidor: 'efetivo' | 'comissionado' | 'temporario' | 'nao_servidor';
-    cargo: string;
-    lotacao: string;
-    data_admissao: string | null;
-    status: 'ativo' | 'inativo' | 'licenca' | 'aposentado' | 'exonerado';
-    observacoes: string | null;
+    cod: string;
+    tipo: 'agente_politico' | 'comissionado' | 'funcao' | 'magisterio' | 'padrao' | 'funcao_gratificada';
+    ativo: boolean;
+    exige_escola: boolean;
     created_at: string;
     updated_at: string;
 }
 
+// Interface para Lotação aninhada no servidor
+export interface LotacaoServidor {
+    id: number;
+    nome: string;
+    abrev: string;
+    email: string;
+    cod_drh: number;
+    created_at: string;
+    updated_at: string;
+    responsaveis: ResponsavelSecretaria[];
+}
+
+// Interface para Endereços do servidor
+export interface EnderecoServidor {
+    id: number;
+    servidor_id: number;
+    cep: string;
+    logradouro: string;
+    numero: string;
+    complemento: string | null;
+    bairro: string;
+    cidade: string;
+    uf: string;
+}
+
+
+
+export interface Servidor {
+    id: number;
+    matricula: string | null;
+    nome_completo: string;
+    rg: string | null;
+    cpf: string;
+    data_nascimento: string | null;
+    sexo: 'M' | 'F' | 'O';
+    
+    // Novos campos RG
+    rg_uf: string | null;
+    orgao_exp: string | null;
+    
+    contato: string | null;
+    is_whatsapp: boolean;
+    email: string | null;
+    tipo_servidor_id: number | null;
+    
+    // Nova estrutura de campos
+    secretaria_id: number;
+    lotacao: string | null;
+    cargo_id: number | null;
+    cargo_2_id: number | null;
+    
+    data_admissao: string | null;
+    
+    // Novos campos de expediente
+    expediente_tipo: 'portaria' | 'decreto' | null;
+    expediente_numero: string | null;
+    expediente_data: string | null;
+    
+    // Novos campos de amparo
+    amparo_tipo: 'lei_municipal' | 'lei_estadual' | 'lei_federal' | 'decreto' | null;
+    amparo_numero: string | null;
+    amparo_data: string | null;
+    
+    status: 'ativo' | 'inativo' | 'licenca' | 'aposentado' | 'exonerado';
+    observacoes: string | null;
+    created_at: string;
+    updated_at: string;
+    
+    // Relacionamentos aninhados atualizados
+    secretaria?: Secretaria;
+    cargo?: CargoServidor;
+    cargo_2?: CargoServidor;
+    tipo_servidor?: TipoServidorSimples;
+    enderecos?: EnderecoServidor[];
+}
+
+// Novo tipo para dados da tabela de servidores
+export interface ServidorTabela {
+    id: number;
+    nome_completo: string;
+    cpf: string;
+    cargo_principal: string | null;
+    tipo_servidor_nome: string | null;
+    secretaria: string | null;
+    status: 'ativo' | 'inativo' | 'licenca' | 'aposentado' | 'exonerado';
+}
+
 export interface Processo {
     id: number;
+    numero: string;
+    ano: number;
     servidor_id: number;
     usuario_id: number;
     tipo_processo: 'licenca' | 'declaracao' | 'gratificacao' | 'outro';
@@ -175,59 +272,100 @@ export interface Processo {
     updated_at: string;
 }
 
-export interface Documento {
+// Novos tipos para os models atualizados
+export interface ProcessoDocumento {
     id: number;
     processo_id: number;
     usuario_id: number;
-    departamento_id: number;
     nome_arquivo: string;
-    detalhes: string | null;
-    caminho_arquivo: string;
+    docx_gerado?: string;
+    docx_enviado?: string;
+    pdf_gerado?: string;
+    pdf_enviado?: string;
+    pdf_assinado?: string;
+    thumbnail?: string;
     created_at: string;
 }
 
-export interface EtapaProcesso {
+export interface ProcessoAnexo {
     id: number;
     processo_id: number;
     usuario_id: number;
-    departamento_id: number;
-    etapa_status: 'pendente' | 'em_andamento' | 'concluido' | 'cancelado';
-    data_inicio: string;
-    data_fim: string | null;
-    observacao: string | null;
+    nome_arquivo: string;
+    caminho_arquivo: string;
+    tipo_arquivo: string;
+    tamanho_arquivo: number;
+    created_at: string;
+}
+
+export enum EtapaStatus {
+    PENDENTE = 'pendente',
+    EM_ANDAMENTO = 'em_andamento',
+    CONCLUIDA = 'concluida',
+    CANCELADA = 'cancelada'
+}
+
+export interface ProcessoEtapa {
+    id: number;
+    processo_id: number;
+    usuario_id: number;
+    etapa_status: EtapaStatus;
+    observacao?: string;
     etapa_final: boolean;
     ordem: number;
+    data_inicio?: string;
+    data_fim?: string;
     created_at: string;
 }
 
+// Interface para processo completo com relacionamentos
+export interface ProcessoCompleto extends Processo {
+    documentos: ProcessoDocumento[];
+    anexos: ProcessoAnexo[];
+    etapas: ProcessoEtapa[];
+}
 
-export interface Portaria {
+
+export interface Documento {
   id: number;
   numero: string;
   ano: string;
   descricao: string;
-  data_portaria: string;
+  data_documento: string;
+  data_portaria?: string; // Para compatibilidade com portarias
   status: string;
+  status_novo?: string; // Campo adicional retornado pela API
+  servidor_nome?: string; // Campo adicional retornado pela API
+  tipo_nome?: string; // Campo adicional retornado pela API
+  subtipo_nome?: string; // Campo adicional retornado pela API
   servidor?: {
     id: number;
     nome_completo: string;
     matricula: string;
     cpf: string;
   };
-  tipo_portaria?: {
+  tipo_documento?: {
     id: number;
     nome: string;
   };
-  subtipo_portaria?: {
+  tipo_portaria?: { // Para compatibilidade com portarias
     id: number;
     nome: string;
-    tipo_portaria_id: number;
+  };
+  subtipo_documento?: {
+    id: number;
+    nome: string;
+    tipo_documento_id: number;
   };
 }
 
 export interface Tela {
   id: number;
   nome: string;
+  codigo: string;
+  rota?: string;
+  modulo?: string;
+  liberado: boolean;
 }
 
 export interface Permissao {
@@ -239,29 +377,8 @@ export interface Permissao {
   tela?: Tela;
 }
 
-export interface Portaria {
-  id: number;
-  numero: string;
-  ano: string;
-  descricao: string;
-  data_portaria: string;
-  status: string;
-  servidor?: {
-    id: number;
-    nome_completo: string;
-    matricula: string;
-    cpf: string;
-  };
-  tipo_portaria?: {
-    id: number;
-    nome: string;
-  };
-  subtipo_portaria?: {
-    id: number;
-    nome: string;
-    tipo_portaria_id: number;
-  };
-}
+// Alias para compatibilidade - será removido em versões futuras
+export type Portaria = Documento;
 
 // Interfaces para objetos aninhados na resposta de autenticação
 export interface DepartamentoAuth {

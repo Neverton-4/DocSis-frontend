@@ -3,9 +3,18 @@ import { Usuario, PermissaoUsuario, UsuarioComPermissoes, UsuarioAssinante } fro
 
 class UsuarioService {
   // Buscar todos os usuários
-  async getAll(): Promise<Usuario[]> {
+  async getAll(): Promise<
+    Array<{
+      id: number;
+      nome: string;
+      cargo: string;
+      secretaria_id: number;
+      secretaria_nome: string;
+      status: 'ativo' | 'inativo';
+    }>
+  > {
     try {
-      const response = await api.get('/usuarios');
+      const response = await api.get('/users/all');
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);

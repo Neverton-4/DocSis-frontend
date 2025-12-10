@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { portariaService } from '@/services/portariaService';
+import { documentoService as portariaService } from '@/services/documentoPortariaService';
 
 interface DocumentoPortaria {
   id: number;

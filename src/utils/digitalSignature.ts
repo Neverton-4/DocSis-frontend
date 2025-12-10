@@ -45,7 +45,7 @@ export class DigitalSignaturePKI {
 
       this.pki = new (window as any).LacunaWebPKI({
         // Configuração para Web PKI Express local
-        endpoint: 'http://localhost:8080/', // Porta padrão do Web PKI Express
+        // endpoint: 'http://localhost:8080/', // Porta padrão do Web PKI Express (não usado mais)
         // Não precisa de licenseUrl para versão Express
       });
       
@@ -195,13 +195,8 @@ export class DigitalSignaturePKI {
 
   // Verificar se Web PKI Express está rodando
   public async checkStatus(): Promise<boolean> {
-    try {
-      const response = await fetch('http://localhost:8080/api/system/info');
-      return response.ok;
-    } catch (error) {
-      console.error('Web PKI Express não está rodando:', error);
-      return false;
-    }
+    // Não precisamos mais verificar o servidor local, usando CDN
+    return true;
   }
 
   // Utilitários para conversão
